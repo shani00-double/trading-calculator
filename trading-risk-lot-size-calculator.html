@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trading Risk & Lot Size Calculator</title>
+<style>
+:root{--bg:#07111f;--panel:#0f1b2d;--field:#15263d;--border:#29415f;--text:#f7fbff;--muted:#9fb0c6;--accent:#4cc9f0;--good:#35d07f;--warn:#ffb020;--bad:#ff5d73}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#03070d,var(--bg));color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif;padding:20px}
+.wrap{max-width:1150px;margin:auto}.hero{margin-bottom:22px}.eyebrow{color:var(--accent);font-size:.78rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+h1{font-size:clamp(2rem,6vw,4.2rem);line-height:1;margin:8px 0 12px;letter-spacing:-.05em}.intro{color:var(--muted);max-width:760px;line-height:1.6}
+.layout{display:grid;grid-template-columns:1.05fr .95fr;gap:18px}.panel{background:var(--panel);border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:0 18px 50px #0005}
+.head{padding:20px 20px 0}.head h2{margin:0;font-size:1.15rem}.head p{color:var(--muted);font-size:.9rem;line-height:1.5}
+.form,.results{padding:18px 20px 22px}.section{font-size:.78rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:4px 0 10px;color:#dbe8f6}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin-bottom:18px}.full{grid-column:1/-1}
+label{display:block;margin:0 0 6px;font-size:.87rem;font-weight:650;color:#d5e1ef}input,select{width:100%;padding:12px 13px;border-radius:11px;border:1px solid var(--border);background:var(--field);color:var(--text);font-size:1rem}
+input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px #4cc9f024}.hint{font-size:.76rem;color:var(--muted);margin-top:5px;line-height:1.4}
+.radio{display:grid;grid-template-columns:1fr 1fr;gap:8px}.radio label{margin:0}.radio input{display:none}.radio span{display:block;padding:12px;text-align:center;border:1px solid var(--border);border-radius:11px;background:var(--field);color:var(--muted);cursor:pointer}
+.radio input:checked+span{border-color:var(--accent);background:#4cc9f018;color:#dff9ff}.custom{display:none}
+.actions{display:flex;gap:10px;flex-wrap:wrap}.actions button{border:0;border-radius:11px;padding:13px 18px;font-weight:800;font-size:.98rem;cursor:pointer}
+.primary{background:var(--accent);color:#08283a;flex:1}.secondary{background:var(--field);color:var(--text);border:1px solid var(--border)!important}
+.status{padding:13px 14px;border-radius:12px;margin-bottom:14px;font-weight:700;line-height:1.45}.neutral{background:#9fb0c615;border:1px solid #9fb0c644}.good{background:#35d07f18;border:1px solid #35d07f66;color:#cbffe2}.warn{background:#ffb02018;border:1px solid #ffb02066;color:#ffe3a8}.bad{background:#ff5d7318;border:1px solid #ff5d7366;color:#ffd0d7}
+.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.metric{background:var(--field);border:1px solid var(--border);border-radius:12px;padding:14px;min-height:96px}.name{font-size:.76rem;color:var(--muted);margin-bottom:8px}.value{font-weight:850;font-size:1.5rem;letter-spacing:-.03em}.sub{font-size:.72rem;color:var(--muted);margin-top:5px}
+.summary{margin-top:13px;padding:14px;border-radius:12px;background:#07111fb3;border:1px solid var(--border);line-height:1.6;font-size:.88rem}.formula,.note{color:var(--muted);font-size:.8rem;line-height:1.6;margin-top:14px}.formula code{background:#030a12;padding:2px 5px;border-radius:5px;color:#eef8ff}
+@media(max-width:880px){.layout{grid-template-columns:1fr}}@media(max-width:580px){body{padding:12px}.grid,.metrics{grid-template-columns:1fr}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<div class="hero"><div class="eyebrow">Position sizing made practical</div><h1>Trading Risk & Lot Size Calculator</h1><p class="intro">Calculate risk-based lot size, leverage limits, margin required and projected reward for crypto, forex, metals, indices and commodities.</p></div>
+<div class="layout">
+<section class="panel">
+<div class="head"><h2>Trade setup</h2><p>Use your broker's own contract size and leverage settings.</p></div>
+<form id="form" class="form">
+<div class="section">Market</div>
+<div class="grid">
+<div class="full"><label for="instrument">Instrument preset</label><select id="instrument">
+<option value="btc">BTCUSD — Crypto</option><option value="eth">ETHUSD — Crypto</option><option value="eurusd">EURUSD — Forex</option><option value="gbpusd">GBPUSD — Forex</option><option value="xauusd">XAUUSD — Gold</option><option value="xagusd">XAGUSD — Silver</option><option value="us30">US30 — Index</option><option value="nas100">NAS100 — Index</option><option value="usoil">USOIL — Commodity</option><option value="custom">Custom instrument</option>
+</select><div class="hint">Presets are starting points only. Broker specifications can differ.</div></div>
+<div><label>Direction</label><div class="radio"><label><input type="radio" name="direction" value="buy" checked><span>Buy</span></label><label><input type="radio" name="direction" value="sell"><span>Sell</span></label></div></div>
+<div><label for="leverage">Leverage</label><select id="leverage">
+<option value="1">1:1</option><option value="2" selected>1:2</option><option value="3">1:3</option><option value="5">1:5</option><option value="10">1:10</option><option value="20">1:20</option><option value="30">1:30</option><option value="50">1:50</option><option value="100">1:100</option><option value="200">1:200</option><option value="300">1:300</option><option value="400">1:400</option><option value="500">1:500</option><option value="1000">1:1000</option><option value="custom">Custom</option>
+</select></div>
+<div id="customWrap" class="custom"><label for="customLeverage">Custom multiplier</label><input id="customLeverage" type="number" min=".01" step=".01" placeholder="For 1:25, enter 25"></div>
+</div>
+
+<div class="section">Account and risk</div>
+<div class="grid">
+<div><label for="equity">Account equity ($)</label><input id="equity" type="number" min=".01" step=".01" value="100000" required></div>
+<div><label for="riskPercent">Risk per trade (%)</label><input id="riskPercent" type="number" min=".01" step=".01" value="1" required></div>
+<div><label for="contractSize">Contract size per lot</label><input id="contractSize" type="number" min=".000001" step=".000001" value="1" required></div>
+<div><label for="lotStep">Broker lot step</label><input id="lotStep" type="number" min=".000001" step=".000001" value=".01" required><div class="hint">Usually 0.01.</div></div>
+</div>
+
+<div class="section">Price levels</div>
+<div class="grid">
+<div><label for="entry">Entry price</label><input id="entry" type="number" min=".000001" step=".000001" value="62151.03" required></div>
+<div><label for="stop">Stop-loss price</label><input id="stop" type="number" min=".000001" step=".000001" value="62073.16" required></div>
+<div><label for="target">Take-profit price</label><input id="target" type="number" min=".000001" step=".000001" value="62306.77"></div>
+<div><label for="commission">Round-trip commission per lot ($)</label><input id="commission" type="number" min="0" step=".01" value="0"></div>
+</div>
+<div class="actions"><button class="primary" type="submit">Calculate trade</button><button class="secondary" id="reset" type="button">Reset</button></div>
+</form>
+</section>
+
+<aside class="panel">
+<div class="head"><h2>Calculated result</h2><p>The usable size is the lower of your risk-based and leverage-limited sizes.</p></div>
+<div class="results">
+<div id="status" class="status neutral">Enter your setup and press Calculate trade.</div>
+<div class="metrics">
+<div class="metric"><div class="name">Risk-based lot size</div><div id="riskLots" class="value">—</div><div class="sub">Before leverage limits</div></div>
+<div class="metric"><div class="name">Maximum by leverage</div><div id="maxLots" class="value">—</div><div class="sub">Theoretical maximum</div></div>
+<div class="metric"><div class="name">Tradable lot size</div><div id="tradableLots" class="value">—</div><div class="sub">Rounded down to lot step</div></div>
+<div class="metric"><div class="name">Intended cash risk</div><div id="cashRisk" class="value">—</div><div class="sub">From your chosen percentage</div></div>
+<div class="metric"><div class="name">Actual risk</div><div id="actualRiskPercent" class="value">—</div><div id="actualRiskCash" class="sub">—</div></div>
+<div class="metric"><div class="name">Margin required</div><div id="marginRequired" class="value">—</div><div id="freeMargin" class="sub">—</div></div>
+<div class="metric"><div class="name">Risk-to-reward</div><div id="rrRatio" class="value">—</div><div id="rewardCash" class="sub">—</div></div>
+<div class="metric"><div class="name">Required leverage</div><div id="requiredLeverage" class="value">—</div><div class="sub">For the full risk-based size</div></div>
+</div>
+<div id="summary" class="summary">Your trade summary will appear here.</div>
+<div class="formula"><strong>Risk lots:</strong> <code>risk cash ÷ loss per lot</code><br><strong>Max lots:</strong> <code>(equity × leverage) ÷ (entry × contract size)</code><br><strong>Margin:</strong> <code>notional value ÷ leverage</code></div>
+</div>
+</aside>
+</div>
+<p class="note">This is an estimate. Some MT5 symbols use fixed initial margin, percentage margin, tiered leverage, currency conversion or different tick values. Always compare the result with the instrument Specification window in MT5.</p>
+</main>
+
+<script>
+const presets={
+btc:{c:1,s:.01,l:2,e:62151.03,sl:62073.16,tp:62306.77},
+eth:{c:1,s:.01,l:2,e:3400,sl:3360,tp:3480},
+eurusd:{c:100000,s:.01,l:30,e:1.085,sl:1.0825,tp:1.09},
+gbpusd:{c:100000,s:.01,l:30,e:1.275,sl:1.2715,tp:1.282},
+xauusd:{c:100,s:.01,l:10,e:2350,sl:2338,tp:2374},
+xagusd:{c:5000,s:.01,l:10,e:30,sl:29.6,tp:30.8},
+us30:{c:1,s:.01,l:10,e:40000,sl:39850,tp:40300},
+nas100:{c:1,s:.01,l:10,e:20000,sl:19900,tp:20200},
+usoil:{c:1000,s:.01,l:10,e:80,sl:79.4,tp:81.2},
+custom:{c:1,s:.01,l:10,e:100,sl:99,tp:102}
+};
+const $=id=>document.getElementById(id);
+const form=$("form"), instrument=$("instrument"), leverage=$("leverage"), customWrap=$("customWrap"), customLeverage=$("customLeverage");
+const money=v=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:2}).format(v);
+const num=(v,d=4)=>new Intl.NumberFormat("en-US",{minimumFractionDigits:2,maximumFractionDigits:d}).format(v);
+function setPreset(k){const p=presets[k];$("contractSize").value=p.c;$("lotStep").value=p.s;$("entry").value=p.e;$("stop").value=p.sl;$("target").value=p.tp;
+const found=[...leverage.options].some(o=>o.value==String(p.l));leverage.value=found?String(p.l):"custom";customWrap.style.display=leverage.value==="custom"?"block":"none";customLeverage.required=leverage.value==="custom";if(!found)customLeverage.value=p.l}
+instrument.addEventListener("change",()=>setPreset(instrument.value));
+leverage.addEventListener("change",()=>{const x=leverage.value==="custom";customWrap.style.display=x?"block":"none";customLeverage.required=x});
+$("reset").addEventListener("click",()=>{form.reset();instrument.value="btc";setPreset("btc");clearResults()});
+form.addEventListener("submit",e=>{e.preventDefault();calculate()});
+function lev(){return leverage.value==="custom"?Number(customLeverage.value):Number(leverage.value)}
+function roundDown(v,s){const d=Math.max(0,(String(s).split(".")[1]||"").length);return Number((Math.floor((v+Number.EPSILON)/s)*s).toFixed(d))}
+function clearResults(){["riskLots","maxLots","tradableLots","cashRisk","actualRiskPercent","actualRiskCash","marginRequired","freeMargin","rrRatio","rewardCash","requiredLeverage"].forEach(id=>$(id).textContent="—");$("status").className="status neutral";$("status").textContent="Enter your setup and press Calculate trade.";$("summary").textContent="Your trade summary will appear here."}
+function calculate(){
+const equity=Number($("equity").value),riskPct=Number($("riskPercent").value),L=lev(),c=Number($("contractSize").value),step=Number($("lotStep").value),entry=Number($("entry").value),stop=Number($("stop").value),commission=Number($("commission").value||0),targetText=$("target").value.trim(),target=targetText===""?null:Number(targetText),dir=document.querySelector('input[name="direction"]:checked').value,status=$("status");
+if([equity,riskPct,L,c,step,entry,stop].some(v=>!Number.isFinite(v)||v<=0)||commission<0||entry===stop||(target!==null&&(!Number.isFinite(target)||target<=0))){status.className="status bad";status.textContent="Check the figures entered. Values must be positive and entry and stop must differ.";return}
+if((dir==="buy"&&stop>=entry)||(dir==="sell"&&stop<=entry)){status.className="status bad";status.textContent=dir==="buy"?"For a buy, the stop must be below entry.":"For a sell, the stop must be above entry.";return}
+if(target!==null&&((dir==="buy"&&target<=entry)||(dir==="sell"&&target>=entry))){status.className="status bad";status.textContent=dir==="buy"?"For a buy, take profit must be above entry.":"For a sell, take profit must be below entry.";return}
+const intended=equity*riskPct/100,dist=Math.abs(entry-stop),lossPerLot=dist*c+commission,riskLots=intended/lossPerLot,maxLots=equity*L/(entry*c),raw=Math.min(riskLots,maxLots),lots=roundDown(raw,step);
+if(lots<=0){status.className="status bad";status.textContent="Calculated size is below the broker lot step.";return}
+const notional=lots*entry*c,margin=notional/L,free=Math.max(0,equity-margin),actual=lots*lossPerLot,actualPct=actual/equity*100,reqLev=riskLots*entry*c/equity;
+let rr=null,reward=null;if(target!==null){const rewardPerLot=Math.max(0,Math.abs(target-entry)*c-commission);reward=lots*rewardPerLot;rr=actual>0?reward/actual:null}
+$("riskLots").textContent=num(riskLots);$("maxLots").textContent=num(maxLots);$("tradableLots").textContent=num(lots);$("cashRisk").textContent=money(intended);$("actualRiskPercent").textContent=num(actualPct)+"%";$("actualRiskCash").textContent=money(actual);$("marginRequired").textContent=money(margin);$("freeMargin").textContent=money(free)+" equity not used as margin";$("requiredLeverage").textContent="1:"+num(reqLev,2);
+if(rr!==null){$("rrRatio").textContent="1:"+num(rr,2);$("rewardCash").textContent=money(reward)+" projected reward"}else{$("rrRatio").textContent="—";$("rewardCash").textContent="Add a take-profit price"}
+const limited=maxLots<riskLots;status.className="status "+(limited?"warn":"good");status.textContent=limited?`Margin-limited: risk sizing suggests ${num(riskLots)} lots, but 1:${num(L,2)} leverage permits about ${num(maxLots)} lots before rounding.`:`Your risk-based size fits within 1:${num(L,2)} leverage. Tradable size: ${num(lots)} lots.`;
+let lines=[`<strong>${dir.toUpperCase()} ${instrument.options[instrument.selectedIndex].text}</strong>`,`Entry ${num(entry,6)}`,`Stop ${num(stop,6)}`,`Size ${num(lots)} lots`,`Estimated risk ${money(actual)} (${num(actualPct)}%)`,`Margin ${money(margin)}`];if(target!==null&&rr!==null){lines.push(`Target ${num(target,6)}`);lines.push(`Estimated reward ${money(reward)} at 1:${num(rr,2)}`)}$("summary").innerHTML=lines.join("<br>")
+}
+setPreset("btc");
+</script>
+</body>
+</html>
